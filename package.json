@@ -1,6 +1,6 @@
 {
   "name": "rustport",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A CLI tool that automatically generates TypeScript FFI bindings for Rust libraries, making it easy to call Rust functions from JavaScript/TypeScript in Bun projects",
   "main": "dist/index.js",
   "bin": {
@@ -33,5 +33,13 @@
   },
   "engines": {
     "node": ">=16.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmycin/rustport.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mmycin/rustport/issues"
+  },
+  "homepage": "https://github.com/mmycin/rustport#readme"
 }

@@ -48,7 +48,7 @@ export async function generateBindings(libDir: string): Promise<void> {
     }
 
     // Generate index.ts
-    generateIndexFile(libDir, exports);
+    await generateIndexFile(libDir, exports);
 }
 
 function generateTypeScriptBinding(
@@ -105,22 +105,22 @@ function generateTypeScriptBinding(
     return content;
 }
 
-function generateIndexFile(
+async function generateIndexFile(
     libDir: string,
     exports: Record<string, string[]>
-): void {
+): Promise<void> {
     let content = "";
 
-    // Generate imports
-    for (const [importPath, functionNames] of Object.entries(exports)) {
-        const moduleName = path.basename(importPath);
-        
-        // Append to content instead of overwriting it
-        content += `export * from "./mod/${moduleName}";\n`;
+    // Generate imports with proper relative paths
+    for (const [modulePath, functionNames] of Object.entries(exports)) {
+        // Add export statement with the correct path
+        content += `export * from "${modulePath}";
+`;
     }
 
     content += "\n";
 
     // Write index.ts
-    fs.writeFileSync(path.join(libDir, "index.ts"), content);
+    const indexFilePath = path.join(libDir, "index.ts");
+    await fs.appendFile(indexFilePath, content, { encoding: "utf8" });
 }
