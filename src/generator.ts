@@ -41,7 +41,7 @@ export async function generateBindings(libDir: string): Promise<void> {
         const modulePath = path.join(
             relativeDir === "." ? "" : relativeDir,
             fileName
-        );
+        ).replace(/\\/g, '/');
         const importPath = `./${path.join("mod", modulePath)}`;
 
         exports[importPath] = functions.map((fn) => fn.name);
@@ -84,7 +84,7 @@ function generateTypeScriptBinding(
     // First create the FFI binding
     const platform = process.platform;
     if (platform === "win32") {
-        content += `const lib = dlopen(\`\${BASE_DIR}/${fileName}.\${suffix}\`);\n\n`;
+        content += `const lib = dlopen(\`\${BASE_DIR}/${fileName}.\${suffix}\`, {\n`;
     } else if (platform === "linux") {
         content += `const lib = dlopen(\`\${BASE_DIR}/lib${fileName}.\${suffix}\`, {\n`;
     } else {
@@ -121,7 +121,7 @@ async function generateIndexFile(
     // Generate imports with proper relative paths
     for (const [modulePath, functionNames] of Object.entries(exports)) {
         // Add export statement with the correct path
-        content += `export * from "${modulePath}";
+        content += `export * from "${modulePath.replace(/\\/g, "/")}";
 `;
     }
 
