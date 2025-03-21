@@ -82,7 +82,14 @@ function generateTypeScriptBinding(
     };
 
     // First create the FFI binding
-    content += `const lib = dlopen(\`\${BASE_DIR}/${fileName}.\${suffix}\`, {\n`;
+    const platform = process.platform;
+    if (platform === "win32") {
+        content += `const lib = dlopen(\`\${BASE_DIR}/${fileName}.\${suffix}\`);\n\n`;
+    } else if (platform === "linux") {
+        content += `const lib = dlopen(\`\${BASE_DIR}/lib${fileName}.\${suffix}\`, {\n`;
+    } else {
+        throw new Error(`Unsupported platform: ${platform == "darwin"? "MacOS" : platform}`);
+    }
 
     for (const fn of functions) {
         content += `  ${fn.name}: {\n`;

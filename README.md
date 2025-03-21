@@ -1,17 +1,28 @@
-# RustPort
+# 🚀 RustPort 
 
-RustPort is a command-line tool that automates the generation of TypeScript Foreign Function Interface (FFI) bindings for Rust libraries. It simplifies the process of calling Rust functions from JavaScript/TypeScript, making it an excellent choice for Bun-based projects that require high-performance Rust functions.
+RustPort is an NPM package as well as a command-line tool that automates the creation of TypeScript Foreign Function Interface (FFI) bindings for Rust libraries created by Tahcin Ul Karim (Mycin). This means you can call blazing-fast Rust functions from your JavaScript or TypeScript projects effortlessly.
 
-## Why RustPort?
+Perfect for **Bun-powered** apps, RustPort takes care of all the annoying binding work, so you don’t have to.
 
-- **Automated Rust FFI Binding Generation**: No need to manually write bindings; RustPort handles it for you.
-- **Seamless Integration with Bun**: Works effortlessly with Bun's FFI capabilities.
-- **Efficient Type Mapping**: Maps Rust types to TypeScript with minimal effort.
-- **Simple CLI Interface**: Generate and clean bindings with a single command.
+---
 
-## Installation
+## 🧐 Why RustPort?
 
-RustPort can be installed globally using `npm`, `yarn`, or `bun`:
+Because manually writing FFI bindings is like writing assembly—painful and unnecessary. RustPort offers:
+
+✅ **Zero-Hassle Rust FFI Binding Generation** – Just run a command, and boom, your Rust functions are ready in TypeScript.
+
+✅ **Flawless Integration with Bun** – If you’re using Bun, RustPort is your new best friend.
+
+✅ **Effortless Type Mapping** – Converts Rust types into TypeScript like magic.
+
+✅ **Super Simple CLI** – Generate and clean bindings in seconds with **one** command.
+
+---
+
+## 📦 Installation
+
+RustPort can be installed globally via your favorite package manager:
 
 ```bash
 # Using npm
@@ -24,102 +35,116 @@ yarn global add rustport
 bun add -g rustport
 ```
 
-## Getting Started
+---
 
-To use RustPort, follow these steps:
+## 🚀 Getting Started
 
-### 1. Set Up Your Project
+### Step 1: Set Up Your Project
 
-First, create a `lib/` directory in your project root. This directory will store the generated bindings and compiled Rust libraries.
-
-Inside `lib/`, create an `rs/` subdirectory where you will place your Rust source files.
+Inside your project, create a `lib/` directory where RustPort will generate its magic:
 
 ```bash
 mkdir -p lib/rs
 ```
 
-### 2. Write Your Rust Code
+### Step 2: Write Some Rust Code
 
-Inside `lib/rs/`, create a Rust source file, e.g., `hello.rs`, with the following content:
+Create a Rust file, say `hello.rs`, inside `lib/rs/`:
 
 ```rust
 #[no_mangle]
-pub extern "C" fn say_hello(name: *const u8) {
-    println!("Hello, {}!", unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() });
+pub extern "C" fn say_hello() {
+    println!("Hello, Rustacean! 🦀");
 }
 ```
 
-### 3. Generate Bindings
+Yes, that’s all you need. No weird macros, no painful setup.
 
-Now, let RustPort do its magic. Run:
+### Step 3: Generate the Bindings
+
+Now, let RustPort do its thing:
 
 ```bash
 rustport generate lib/
 ```
 
+
 This will:
-- Compile Rust files into dynamic libraries (`.so`/`.dll`/`.dylib` depending on the platform).
-- Generate TypeScript FFI bindings.
-- Create an `index.ts` file inside `lib/`.
 
-### 4. Use Rust Functions in TypeScript
+✅ Compile your Rust functions into dynamic libraries (`.so` / `.dll` / `.dylib`).  
+✅ Generate TypeScript FFI bindings.  
+✅ Create an `index.ts` file inside `lib/`.  
 
-Once the bindings are generated, you can import and use the Rust functions in your JavaScript/TypeScript code:
+### Step 4: Use Rust Functions in TypeScript
+
+Now, call Rust functions as if they were just another JavaScript function:
 
 ```typescript
 import { sayHello } from "./lib";
 
-sayHello("World");
+sayHello(); // Prints: Hello, Rustacean! 🦀
 ```
 
-Yes, it’s that easy! Rust speed, Bun simplicity—what more do you need?
+### Step-5. Run it!
+Note that for now it only supports **Bun**, but we’re working on supporting Deno and Node.js. For this, you'll need Bun installed on your machine.
+Install Bun using `npm`, `yarn`, or `bun`:  
+```bash
+npm install -g bun
+```
+Now run the file.
+
+```bash
+bun run fileName.ts
+```
+
+**That’s it!** You just called Rust from TypeScript without touching a single binding manually. 🎉
 
 ---
 
-## CLI Commands
+## 🔥 CLI Commands
 
 ### `rustport generate <path>`
 Generates Rust FFI bindings and compiles Rust files to dynamic libraries.
 
-Example:
 ```bash
 rustport generate lib/
 ```
 
 ### `rustport clean`
-Removes generated files, including compiled Rust libraries and TypeScript bindings.
+Wipes out all generated files and libraries, leaving no trace of your sins. 😈
 
-Example:
 ```bash
 rustport clean
 ```
 
 ### `rustport help`
-Displays the help menu with available commands.
+Displays the help menu.
 
-Example:
 ```bash
 rustport help
 ```
 
-## Advanced Usage
+---
 
-### Customizing Bindings
-The generated `index.ts` file can be modified to better suit your project’s needs. You can rename functions, add additional TypeScript types, or provide wrapper functions.
+## ⚡ Advanced Usage
 
-Example (after generating bindings):
+### 🏗️ Customizing Bindings
+
+Want to rename functions or create wrappers? Just tweak the generated `index.ts`:
+
 ```typescript
 import { sayHello as rustSayHello } from "./lib";
 
-export function sayHello(name: string) {
-    rustSayHello(name);
+export function sayHello() {
+    rustSayHello();
 }
 ```
 
-### Passing and Returning Numbers
-Rust functions can return numbers, making complex calculations super efficient.
+### 🧮 Passing & Returning Numbers
 
-#### Rust Code (`math.rs`):
+Rust loves numbers. So do we. Let's make them talk:
+
+#### Rust (`math.rs`):
 ```rust
 #[no_mangle]
 pub extern "C" fn add_numbers(a: i32, b: i32) -> i32 {
@@ -132,17 +157,18 @@ Generate bindings:
 rustport generate lib/
 ```
 
-#### TypeScript Usage:
+#### TypeScript:
 ```typescript
 import { addNumbers } from "./lib";
 
 console.log("5 + 3 =", addNumbers(5, 3));
 ```
 
-### Passing and Returning Strings
-Rust can return strings too! But you need to manage memory properly.
+### 📝 Passing & Returning Strings
 
-#### Rust Code (`string_utils.rs`):
+Rust can return strings too, but remember: **memory management is a thing!**
+
+#### Rust (`string_utils.rs`):
 ```rust
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
@@ -160,40 +186,42 @@ Generate bindings:
 rustport generate lib/
 ```
 
-#### TypeScript Usage:
+#### TypeScript:
 ```typescript
 import { greet } from "./lib";
 
-console.log(greet("Alice"));
+console.log(greet("Alice")); // Prints: Hello, Alice!
 ```
 
-Yes, Rust just greeted Alice from TypeScript. Wild, isn’t it?
+Yes, Rust just greeted Alice from TypeScript. Wild, huh? 😲
 
-## Troubleshooting
+---
 
-**1. RustPort fails to generate bindings**
-- Ensure that Rust and Cargo are installed.
-- Check that the `lib/rs/` directory contains valid Rust files.
-- Run `cargo build` inside `lib/rs/` to diagnose compilation issues.
+## 🛠️ Troubleshooting
 
-**2. TypeScript FFI calls fail**
-- Ensure that the Rust functions are properly exported using `#[no_mangle]`.
-- Verify that the correct function signatures are used in TypeScript.
+**1. RustPort fails to generate bindings**  
+- Make sure Rust and Cargo are installed.  
+- Check if `lib/rs/` contains valid Rust files.  
+- Run `cargo build` inside `lib/rs/` to debug compilation issues.  
 
-**3. Dynamic libraries are not loading**
-- On Windows, ensure that `.dll` files are in the correct directory.
-- On macOS, use `install_name_tool` to set the correct library paths.
-- On Linux, check `LD_LIBRARY_PATH`.
+**2. TypeScript FFI calls fail**  
+- Ensure that Rust functions are exported with `#[no_mangle]`.  
+- Verify the correct function signatures in TypeScript.  
 
-## Example Project
+**3. Dynamic libraries not loading?**  
+- On **Windows**, ensure `.dll` files are in the correct directory.  
+- On **macOS**, use `install_name_tool` to set the correct paths.  
+- On **Linux**, check `LD_LIBRARY_PATH`.  
 
-Here's a simple Bun project using RustPort:
+---
 
-### Directory Structure
+## 🏗️ Example Project
+
+Here’s what a simple RustPort-powered Bun project might look like:
+
 ```
 my-project/
 ├── lib/
-│   ├── index.ts
 │   ├── rs/
 │   │   ├── hello.rs
 │   │   ├── math.rs
@@ -208,16 +236,23 @@ my-project/
 ```typescript
 import { sayHello, addNumbers, greet } from "../lib";
 
-sayHello("RustPort User");
+sayHello();
 console.log(addNumbers(10, 20));
 console.log(greet("Bob"));
 ```
 
-## Contributing
+---
 
-We welcome contributions! Feel free to open issues or submit pull requests on GitHub. If RustPort made your life easier, buy us a virtual coffee! ☕
+## 💖 Contributing
 
-## License
+If you love RustPort and want to make it even better, open an issue or send a PR on GitHub! If this tool saved you time, consider buying us a virtual coffee. ☕
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+---
 
+## 📜 License
+
+RustPort is licensed under MIT. See the [LICENSE](LICENSE) file for details.
+
+**Now go forth and build fast, Rust-powered Bun projects! 🚀**
+
+Note: Also check out [ZigPort](https://github.com/mmycin/zigport) for a similar tool that generates TypeScript FFI bindings for Zig libraries.

@@ -11,7 +11,7 @@ export function cli(args: string[]) {
     program
         .name("rustport")
         .description(
-            "Generate TypeScript FFI bindings for Rust libraries using Bun"
+            "Generate TypeScript FFI bindings for Rust libraries using Bun. Created by Mycin"
         )
         .version("1.0.1");
 
@@ -59,6 +59,26 @@ export function cli(args: string[]) {
 
                 console.log(
                     chalk.green("✓ Successfully generated TypeScript bindings!")
+                );
+                
+                console.log(
+                    chalk.blue(
+                        `You can now import your Zig functions in your TypeScript code using the following import statement:`
+                    )
+                );
+
+                console.log(
+                    chalk.cyan("\nimport") +
+                        " " + // Cyan for keywords
+                        chalk.yellow("{") +
+                        " " + // Yellow for `{`
+                        chalk.blue("FUNCTIONNAME") +
+                        " " + // Bright blue function
+                        chalk.yellow("}") +
+                        " " + // Yellow for `}`
+                        chalk.cyan("from") +
+                        " " + // Cyan for keywords
+                        chalk.magenta('"./lib";\n') // Magenta for string
                 );
             } catch (error) {
                 console.error(
