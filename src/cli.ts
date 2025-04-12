@@ -63,7 +63,7 @@ export function cli(args: string[]) {
                 
                 console.log(
                     chalk.blue(
-                        `You can now import your Zig functions in your TypeScript code using the following import statement:`
+                        `You can now import your Rust functions in your TypeScript code using the following import statement:`
                     )
                 );
 
