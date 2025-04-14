@@ -1,6 +1,6 @@
 {
   "name": "rustport",
-  "version": "1.2.1",
+  "version": "1.2.6",
   "description": "A CLI tool that automatically generates TypeScript FFI bindings for Rust libraries, making it easy to call Rust functions from JavaScript/TypeScript in Bun projects",
   "main": "dist/index.js",
   "bin": {
@@ -21,10 +21,11 @@
   "author": "Tahcin Ul Karim (Mycin)",
   "license": "MIT",
   "dependencies": {
+    "chalk": "^5.3.0",
     "commander": "^11.0.0",
     "fs-extra": "^11.1.1",
-    "chalk": "^5.3.0",
-    "glob": "^10.3.3"
+    "glob": "^10.3.3",
+    "prettier": "^3.5.3"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",

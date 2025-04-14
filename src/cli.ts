@@ -13,7 +13,7 @@ export function cli(args: string[]) {
         .description(
             "Generate TypeScript FFI bindings for Rust libraries using Bun. Created by Mycin"
         )
-        .version("1.2.1");
+        .version("1.2.6");
 
     program
         .command("generate")
