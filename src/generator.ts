@@ -127,6 +127,15 @@ async function generateIndexFile(
 
     content += "\n";
 
+    content += `
+export function Benchmark<T>(label: string, fn: () => T): T {
+    console.time(label);
+    const result = fn();
+    console.timeEnd(label);
+    return result;
+}\n\n
+    `;
+
     // Write index.ts
     const indexFilePath = path.join(libDir, "index.ts");
     await fs.appendFile(indexFilePath, content, { encoding: "utf8" });
