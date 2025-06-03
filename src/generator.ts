@@ -3,53 +3,66 @@ import path from "path";
 import { parseRustFile } from "./parser.js";
 import { glob } from "glob";
 import prettier from "prettier";
-import { readFileSync } from "fs";
 
 export async function generateBindings(libDir: string): Promise<void> {
-    // Create mod directory if it doesn't exist
-    const modDir = path.join(libDir, "mod");
-    fs.ensureDirSync(modDir);
+    try {
+        const modDir = path.join(libDir, "mod");
+        await fs.ensureDir(modDir);
 
-    // Get all Rust files
-    const rustFiles = await glob(`${libDir}/rs/**/*.rs`);
+        const rustFiles = await glob(`${libDir}/rs/**/*.rs`);
 
-    // Track all exports for index.ts
-    const exports: Record<string, string[]> = {};
-
-    // Process each Rust file
-    for (const rustFile of rustFiles) {
-        const fileName = path.basename(rustFile, ".rs");
-        const relativePath = path.relative(path.join(libDir, "rs"), rustFile);
-        const relativeDir = path.dirname(relativePath);
-
-        // Create subdirectories in mod/ if needed
-        const targetDir = path.join(modDir, relativeDir);
-        fs.ensureDirSync(targetDir);
-
-        // Parse Rust file to extract function signatures
-        const functions = parseRustFile(rustFile);
-
-        if (functions.length === 0) {
-            console.warn(`Warning: No exported functions found in ${rustFile}`);
-            continue;
+        if (rustFiles.length === 0) {
+            console.warn("⚠️ No Rust files found in rs directory.");
+            return;
         }
 
-        // Generate TypeScript binding file
-        const tsFilePath = path.join(targetDir, `${fileName}.ts`);
-        const tsContent = generateTypeScriptBinding(fileName, functions);
-        fs.writeFileSync(tsFilePath, tsContent);
+        const exports: Record<string, string[]> = {};
 
-        // Track exports for index.ts
-        const modulePath = path
-            .join(relativeDir === "." ? "" : relativeDir, fileName)
-            .replace(/\\/g, "/");
-        const importPath = `./${path.join("mod", modulePath)}`;
+        for (const rustFile of rustFiles) {
+            const fileName = path.basename(rustFile, ".rs");
+            const relativePath = path.relative(path.join(libDir, "rs"), rustFile);
+            const relativeDir = path.dirname(relativePath);
+            const targetDir = path.join(modDir, relativeDir);
 
-        exports[importPath] = functions.map((fn) => fn.name);
+            await fs.ensureDir(targetDir);
+
+            let functions;
+            try {
+                functions = parseRustFile(rustFile);
+            } catch (e) {
+                console.error(`❌ Failed to parse ${rustFile}:\n`, e);
+                continue;
+            }
+
+            if (!functions || functions.length === 0) {
+                console.warn(`⚠️ No exported functions found in ${rustFile}`);
+                continue;
+            }
+
+            const tsFilePath = path.join(targetDir, `${fileName}.ts`);
+            const tsContent = generateTypeScriptBinding(fileName, functions);
+
+            try {
+                await fs.writeFile(tsFilePath, tsContent, "utf8");
+            } catch (err) {
+                console.error(`❌ Failed to write TypeScript binding to ${tsFilePath}:\n`, err);
+                continue;
+            }
+
+            const modulePath = path
+                .join(relativeDir === "." ? "" : relativeDir, fileName)
+                .replace(/\\/g, "/");
+
+            const importPath = `./mod/${modulePath}`;
+            exports[importPath] = functions.map((fn) => fn.name);
+        }
+
+        await generateIndexFile(libDir, exports);
+
+        console.log("✅ Rust bindings generated successfully.");
+    } catch (err) {
+        console.error("❌ Unexpected error during bindings generation:\n", err);
     }
-
-    // Generate index.ts
-    await generateIndexFile(libDir, exports);
 }
 
 function generateTypeScriptBinding(
@@ -60,102 +73,106 @@ function generateTypeScriptBinding(
         returnType: string;
     }>
 ): string {
-    let content = `import { dlopen, FFIType, suffix } from "bun:ffi";\n\n`;
-    content += `const BASE_DIR = "lib/bin";\n\n`;
-
-    // Map Rust types to FFI types
     const typeMapping: Record<string, string> = {
-        u8: "u8",
-        u16: "u16",
-        u32: "u32",
-        u64: "u64",
-        i8: "i8",
-        i16: "i16",
-        i32: "i32",
-        i64: "i64",
-        f32: "f32",
-        f64: "f64",
-        bool: "bool",
-        void: "void",
-        char: "char",
-        ptr: "ptr",
-        cstring: "cstring",
+        u8: "u8", u16: "u16", u32: "u32", u64: "u64",
+        i8: "i8", i16: "i16", i32: "i32", i64: "i64",
+        f32: "f32", f64: "f64", bool: "bool",
+        void: "void", char: "char", ptr: "ptr",
+        cstring: "cstring"
     };
 
-    // First create the FFI binding
+    const lines: string[] = [];
+
+    lines.push(`import { dlopen, FFIType, suffix } from "bun:ffi";`);
+    lines.push(`import path from "path";\n`);
+    lines.push(`const BASE_DIR = path.join(__dirname, "..", "bin");\n`);
+
     const platform = process.platform;
-    if (platform === "win32") {
-        content += `const lib = dlopen(\`\${BASE_DIR}/${fileName}.\${suffix}\`, {\n`;
-    } else if (platform === "linux") {
-        content += `const lib = dlopen(\`\${BASE_DIR}/lib${fileName}.\${suffix}\`, {\n`;
-    } else {
-        throw new Error(
-            `Unsupported platform: ${platform == "darwin" ? "MacOS" : platform}`
+    let libFileName: string;
+
+    switch (platform) {
+        case "win32":
+            libFileName = `${fileName}.\${suffix}`;
+            break;
+        case "linux":
+        case "darwin":
+            libFileName = `lib${fileName}.\${suffix}`;
+            break;
+        default:
+            throw new Error(`❌ Unsupported platform: ${platform}`);
+    }
+
+    lines.push(`const lib = dlopen(path.join(BASE_DIR, \`${libFileName}\`), {`);
+
+    for (const fn of functions) {
+        lines.push(`  ${fn.name}: {`);
+        lines.push(
+            `    args: [${fn.args
+                .map((arg) => `FFIType.${typeMapping[arg.type] || "u64"}`)
+                .join(", ")}],`
         );
+        lines.push(
+            `    returns: FFIType.${typeMapping[fn.returnType] || "u64"},`
+        );
+        lines.push(`  },`);
     }
+
+    lines.push(`});\n`);
 
     for (const fn of functions) {
-        content += `  ${fn.name}: {\n`;
-        content += `    args: [${fn.args
-            .map((arg) => `FFIType.${typeMapping[arg.type] || "u64"}`)
-            .join(", ")}],\n`;
-        content += `    returns: FFIType.${
-            typeMapping[fn.returnType] || "u64"
-        },\n`;
-        content += `  },\n`;
+        lines.push(`export const ${fn.name} = lib.symbols.${fn.name};`);
     }
 
-    content += `});\n\n`;
-
-    // Then export each function individually
-    for (const fn of functions) {
-        content += `export const ${fn.name} = lib.symbols.${fn.name};\n`;
-    }
-
-    return content;
+    return lines.join("\n");
 }
 
 async function generateIndexFile(
     libDir: string,
     exports: Record<string, string[]>
 ): Promise<void> {
-    let content = "";
+    try {
+        const indexPath = path.join(libDir, "index.ts");
+        let existingContent = "";
 
-    // Generate imports with proper relative paths
-    for (const [modulePath, _] of Object.entries(exports)) {
-        // Add export statement with the correct path
-        content += `export * from "${modulePath.replace(/\\/g, "/")}";
-`;
-    }
+        if (await fs.pathExists(indexPath)) {
+            existingContent = await fs.readFile(indexPath, "utf8");
+        }
 
-    content += "\n";
+        const newExports: string[] = [];
 
-    const benchmarktext = readFileSync(
-        path.join(libDir, "index.ts")
-    ).toString();
-    if (!benchmarktext.includes("export function Benchmark<T>")) {
-        content += `
-        export function Benchmark<T>(label: string, fn: () => T): T {
+        for (const [modulePath] of Object.entries(exports)) {
+            const exportLine = `export * from "${modulePath}";\n`;
+            if (!existingContent.includes(exportLine)) {
+                newExports.push(exportLine);
+            }
+        }
+
+        const benchmarkFn = `
+export function Benchmark<T>(label: string, fn: () => T): T {
     console.time(label);
     const result = fn();
     console.timeEnd(label);
     return result;
 }
-        `;
-    } else {
-        content += "\n";
-    }
+`;
 
-    const finalText = benchmarktext + content;
-    const formatted = await prettier.format(finalText, {
-        trailingComma: "es5",
-        parser: "typescript",
-        semi: true,
-        singleQuote: false,
-        tabWidth: 4,
-        bracketSpacing: true,
-    });
-    // Write index.ts
-    const indexFilePath = path.join(libDir, "index.ts");
-    await fs.writeFile(indexFilePath, formatted, { encoding: "utf8" });
+        if (!existingContent.includes("export function Benchmark")) {
+            newExports.push(benchmarkFn);
+        }
+
+        const finalContent = existingContent + "\n" + newExports.join("");
+
+        const formatted = await prettier.format(finalContent, {
+            parser: "typescript",
+            semi: true,
+            singleQuote: false,
+            tabWidth: 4,
+            trailingComma: "es5",
+            bracketSpacing: true,
+        });
+
+        await fs.writeFile(indexPath, formatted, "utf8");
+    } catch (err) {
+        console.error("❌ Failed to generate index.ts:\n", err);
+    }
 }
